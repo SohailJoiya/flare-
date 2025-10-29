@@ -49,6 +49,7 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
+  status: 'active' | 'blocked';
   referralCode: string;
   referralLink?: string;
   referredBy?: string;

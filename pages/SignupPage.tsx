@@ -54,7 +54,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigate, referralC
     <div className="min-h-screen flex items-center justify-center bg-brand-dark p-4">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
-            <h1 className="text-7xl font-black text-brand-primary leading-none">
+            <h1 className="text-7xl font-black text-brand-primary leading-none flare-animated">
                 FLARE
             </h1>
             <h2 className="text-2xl font-bold text-white uppercase tracking-wider mt-1">
@@ -101,6 +101,21 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigate, referralC
           </button>
         </p>
       </Card>
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        .flare-animated {
+          background-image: linear-gradient(to right, #E61E4D 20%, #ffffff 50%, #E61E4D 80%);
+          background-size: 200% auto;
+          color: #fff;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 3s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };
