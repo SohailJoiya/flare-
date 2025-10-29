@@ -33,9 +33,14 @@ const LoginPage: React.FC<LoginPageProps> = ({onLogin, onNavigate}) => {
   return (
     <div className='min-h-screen flex items-center justify-center bg-brand-dark p-4'>
       <Card className='w-full max-w-md'>
-        <h2 className='text-3xl font-bold text-center text-white mb-6'>
-          Log In to <span className='text-brand-primary'>FAEARING</span>
-        </h2>
+        <div className='text-center mb-8'>
+          <h1 className='text-7xl font-black text-brand-primary leading-none'>
+            FLARE
+          </h1>
+          <h2 className='text-2xl font-bold text-white uppercase tracking-wider mt-1'>
+            Auto Earning
+          </h2>
+        </div>
         <form
           onSubmit={handleLogin}
           className='space-y-6'>
