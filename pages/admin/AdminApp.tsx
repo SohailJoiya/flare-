@@ -6,8 +6,8 @@ import AllUsersPage from './AllUsersPage';
 import DepositRequestsPage from './DepositRequestsPage';
 import NotificationsPage from './NotificationsPage';
 import WithdrawRequestsPage from './WithdrawRequestsPage';
-import SettingsPage from './SettingsPage'; // Import the new SettingsPage
 import Icon from '../../components/Icon';
+import NotificationModal from '../../components/NotificationModal';
 
 interface AdminAppProps {
   user: User;
@@ -25,7 +25,7 @@ interface AdminAppProps {
   onLogout: () => void;
 }
 
-type AdminPage = 'dashboard' | 'users' | 'deposits' | 'withdrawals' | 'notifications' | 'settings';
+type AdminPage = 'dashboard' | 'users' | 'deposits' | 'withdrawals' | 'notifications';
 type UserFilter = 'all' | 'active' | 'inactive';
 type RequestFilter = 'all' | RequestStatus;
 
@@ -46,6 +46,27 @@ const AdminApp: React.FC<AdminAppProps> = ({
   const [initialUserFilter, setInitialUserFilter] = React.useState<UserFilter>('all');
   const [initialDepositFilter, setInitialDepositFilter] = React.useState<RequestFilter>('all');
   const [initialWithdrawalFilter, setInitialWithdrawalFilter] = React.useState<RequestFilter>('all');
+  const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
+  const [selectedNotification, setSelectedNotification] = React.useState<Notification | null>(null);
+  const notificationButtonRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (notificationButtonRef.current && !notificationButtonRef.current.contains(event.target as Node)) {
+            setIsNotificationsOpen(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  const handleNotificationClick = (notification: Notification) => {
+    setSelectedNotification(notification);
+    setIsNotificationsOpen(false);
+  };
+
 
   const handleNavigation = (page: AdminPage, filter?: UserFilter | RequestFilter) => {
     switch (page) {
@@ -68,7 +89,6 @@ const AdminApp: React.FC<AdminAppProps> = ({
     { id: 'deposits', label: 'Deposits', icon: <Icon path="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
     { id: 'withdrawals', label: 'Withdrawals', icon: <Icon path="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /> },
     { id: 'notifications', label: 'Notifications', icon: <Icon path="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /> },
-    { id: 'settings', label: 'Settings', icon: <Icon path="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066 2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /> },
   ];
 
   const renderPage = () => {
@@ -88,8 +108,6 @@ const AdminApp: React.FC<AdminAppProps> = ({
             onUpdate={onUpdateNotification}
             onDelete={onDeleteNotification}
         />
-      case 'settings':
-        return <SettingsPage />;
       default:
         return <AdminDashboard requests={requests} withdrawalRequests={withdrawalRequests} users={users} onNavigate={handleNavigation} />;
     }
@@ -121,8 +139,46 @@ const AdminApp: React.FC<AdminAppProps> = ({
                 </div>
               </div>
             </div>
-            <div className="flex items-center">
-              <span className="text-gray-300 mr-4">Welcome, {user.firstName}</span>
+            <div className="flex items-center space-x-4">
+                <div className="relative" ref={notificationButtonRef}>
+                    <button 
+                        onClick={() => setIsNotificationsOpen(prev => !prev)}
+                        className="p-2 rounded-full text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-primary"
+                        aria-label="View notifications"
+                    >
+                        <Icon path="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        {notifications.length > 0 && (
+                            <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-brand-primary ring-2 ring-brand-surface"></span>
+                        )}
+                    </button>
+                    {isNotificationsOpen && (
+                        <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-xl shadow-lg bg-brand-surface ring-1 ring-white/10 focus:outline-none z-50 border border-white/10">
+                            <div className="py-1">
+                                <div className="px-4 py-3 border-b border-white/10">
+                                    <p className="text-sm font-semibold text-white">Notifications</p>
+                                </div>
+                                <div className="max-h-80 overflow-y-auto">
+                                    {notifications.length > 0 ? notifications.map(notif => (
+                                    <button 
+                                        key={notif.id} 
+                                        onClick={() => handleNotificationClick(notif)}
+                                        className="w-full text-left block px-4 py-3 text-sm text-gray-400 border-b border-white/5 hover:bg-white/5 transition-colors"
+                                    >
+                                        <p className="font-bold text-white">{notif.title}</p>
+                                        <p className="mt-1 truncate">{notif.content}</p>
+                                        <p className="text-xs text-gray-500 mt-2">{notif.date}</p>
+                                    </button>
+                                    )) : (
+                                    <div className="px-4 py-5 text-center text-sm text-gray-500">
+                                        No new notifications.
+                                    </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+              <span className="text-gray-300 hidden sm:block">Welcome, {user.firstName}</span>
               <Button onClick={onLogout} variant="secondary">Logout</Button>
             </div>
           </div>
@@ -134,7 +190,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
       
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-brand-surface border-t border-gray-700">
-        <div className="grid h-full max-w-lg grid-cols-6 mx-auto">
+        <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
             {navItems.map(item => (
                 <button 
                     key={item.id}
@@ -153,6 +209,12 @@ const AdminApp: React.FC<AdminAppProps> = ({
             ))}
         </div>
       </nav>
+       {selectedNotification && (
+        <NotificationModal 
+            notification={selectedNotification} 
+            onClose={() => setSelectedNotification(null)} 
+        />
+      )}
     </div>
   );
 };
