@@ -153,10 +153,6 @@ const WithdrawPage: React.FC<WithdrawPageProps> = ({ onAddRequest, walletBalance
       setError('Please enter a valid amount.');
       return;
     }
-    if (config && numericAmount > config.dailyWithdrawalLimit) {
-        setError(`Amount exceeds the daily withdrawal limit of $${config.dailyWithdrawalLimit}.`);
-        return;
-    }
     if (numericAmount < (config?.minimumWithdrawal || 35)) {
         setError(`Minimum withdrawal amount is $${config?.minimumWithdrawal || 35}.`);
         return;
@@ -218,12 +214,6 @@ const WithdrawPage: React.FC<WithdrawPageProps> = ({ onAddRequest, walletBalance
                         <span className="text-gray-400">{amount ? 'Remaining Balance' : 'Available for Withdrawal'}</span>
                         <span className="text-2xl font-bold text-brand-primary">${(amount ? remainingBalance : availableBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
-                    {config && (
-                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-400">Daily Withdrawal Limit</span>
-                            <span className="font-semibold text-white">${config.dailyWithdrawalLimit.toLocaleString()}</span>
-                        </div>
-                    )}
                     {pendingWithdrawalsAmount > 0 && (
                         <div className="text-right text-xs text-yellow-500 pt-2 border-t border-gray-700/50">
                             Total Balance: ${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br />

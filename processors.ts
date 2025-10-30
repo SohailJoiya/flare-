@@ -106,6 +106,7 @@ export const processUser = (userFromApi: any): User => {
     title: notifFromApi.title || '',
     content: notifFromApi.message || notifFromApi.content || '',
     date: formatDate(notifFromApi.createdAt),
+    isRead: notifFromApi.isRead || false,
   });
 
   export const processDashboardData = (data: any) => {

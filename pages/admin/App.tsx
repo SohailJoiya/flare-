@@ -37,6 +37,28 @@ const App: React.FC = () => {
     }
   };
 
+  const refetchAdminData = async () => {
+      try {
+        const [usersResponse, depositsResponse, withdrawalsResponse, notificationsResponse]: any[] = await Promise.all([
+          api.get('/api/admin/users'),
+          api.get('/api/admin/deposits'),
+          api.get('/api/admin/withdrawals'),
+          api.get('/api/admin/notifications'),
+        ]);
+        const processedUsers = (usersResponse.results || []).map(processUser);
+        setUsers(processedUsers);
+        setDepositRequests((depositsResponse.results || []).map(processDepositRequest));
+        setWithdrawalRequests((withdrawalsResponse.results || []).map(processWithdrawalRequest));
+        setNotifications((notificationsResponse.results || []).map(processNotification));
+      } catch (error) {
+        console.error("Failed to fetch admin data:", error);
+        setUsers([]);
+        setDepositRequests([]);
+        setWithdrawalRequests([]);
+        setNotifications([]);
+      }
+  };
+
   useEffect(() => {
     const checkUserStatus = async () => {
       const token = localStorage.getItem('authToken');
@@ -65,40 +87,63 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
     const fetchData = async () => {
-        if (currentUser.role === UserRole.ADMIN) {
-            try {
-                const [usersResponse, depositsResponse, withdrawalsResponse, notificationsResponse]: any[] = await Promise.all([
-                    api.get('/api/admin/users'),
-                    api.get('/api/admin/deposits'),
-                    api.get('/api/admin/withdrawals'),
-                    api.get('/api/admin/notifications'),
-                ]);
-                const processedUsers = (usersResponse.results || []).map(processUser);
-                setUsers(processedUsers);
-                setDepositRequests((depositsResponse.results || []).map(processDepositRequest));
-                setWithdrawalRequests((withdrawalsResponse.results || []).map(processWithdrawalRequest));
-                setNotifications((notificationsResponse.results || []).map(processNotification));
-            } catch (error) {
-                console.error("Failed to fetch admin data:", error);
-                setUsers([]);
-                setDepositRequests([]);
-                setWithdrawalRequests([]);
-                setNotifications([]);
-            }
-        } else if (currentUser.role === UserRole.USER) {
-          await refetchDashboardData();
-        }
+      if (currentUser.role === UserRole.ADMIN) {
+        await refetchAdminData();
+      } else if (currentUser.role === UserRole.USER) {
+        await refetchDashboardData();
+      }
     };
     
     fetchData();
+
+    if (currentUser.role === UserRole.ADMIN) {
+      intervalId = setInterval(async () => {
+        try {
+          // Admin polls for requests and notifications, but not the full user list.
+          const [depositsResponse, withdrawalsResponse, notificationsResponse]: any[] = await Promise.all([
+            api.get('/api/admin/deposits'),
+            api.get('/api/admin/withdrawals'),
+            api.get('/api/admin/notifications'),
+          ]);
+          setDepositRequests((depositsResponse.results || []).map(processDepositRequest));
+          setWithdrawalRequests((withdrawalsResponse.results || []).map(processWithdrawalRequest));
+          setNotifications((notificationsResponse.results || []).map(processNotification));
+        } catch (error) {
+          console.error("Polling for admin data failed:", error);
+        }
+      }, 30000); // Poll every 30 seconds
+    } else if (currentUser.role === UserRole.USER) {
+      // User polls for their dashboard data, which includes notifications.
+      intervalId = setInterval(refetchDashboardData, 30000); // Poll every 30 seconds
+    }
+
+    // Cleanup interval on component unmount or user change
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
+  const handleMarkNotificationAsRead = (notificationId: string) => {
+    setNotifications(prevNotifications =>
+      prevNotifications.map(n =>
+        n.id === notificationId ? { ...n, isRead: true } : n
+      )
+    );
+  };
 
-  const userNotifications = useMemo(() => {
+  const unreadAdminNotifications = useMemo(() => {
+    return notifications.filter(n => !n.isRead);
+  }, [notifications]);
+  
+  const unreadUserNotifications = useMemo(() => {
     if (currentUser && currentUser.role === UserRole.USER) {
-      return notifications.filter(n => !n.userId || n.userId === currentUser.id);
+      return notifications.filter(n => !n.isRead && (!n.userId || n.userId === currentUser.id));
     }
     return [];
   }, [notifications, currentUser]);
@@ -217,10 +262,6 @@ const App: React.FC = () => {
     await api.delete(`/api/admin/notifications/${id}`);
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
-  
-  const handleNotificationRead = (notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  };
 
   if (appIsLoading) {
     return (
@@ -256,10 +297,11 @@ const App: React.FC = () => {
         onUpdateRequestStatus={updateRequestStatus} 
         onUpdateWithdrawalRequestStatus={updateWithdrawalRequestStatus}
         onLogout={handleLogout}
-        notifications={notifications}
+        notifications={unreadAdminNotifications}
         onAddNotification={addNotification}
         onUpdateNotification={updateNotification}
-        onDeleteNotification={deleteNotification} 
+        onDeleteNotification={deleteNotification}
+        onMarkNotificationAsRead={handleMarkNotificationAsRead}
     />;
   }
 
@@ -267,12 +309,12 @@ const App: React.FC = () => {
     user={currentUser} 
     onLogout={handleLogout} 
     onUpdateUser={handleUpdateUser}
-    notifications={userNotifications}
+    notifications={unreadUserNotifications}
     onAddWithdrawalRequest={addWithdrawalRequest}
-    onNotificationRead={handleNotificationRead}
     dailyClaim={dailyClaim}
     monthlyReward={monthlyReward}
     onRefetchData={refetchDashboardData}
+    onMarkNotificationAsRead={handleMarkNotificationAsRead}
   />;
 };
 

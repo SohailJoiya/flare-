@@ -8,21 +8,21 @@ import NotificationsPage from './NotificationsPage';
 import WithdrawRequestsPage from './WithdrawRequestsPage';
 import Icon from '../../components/Icon';
 import NotificationModal from '../../components/NotificationModal';
+import api from '../../services/api';
 
 interface AdminAppProps {
   user: User;
   users: User[];
   requests: DepositRequest[];
   withdrawalRequests: WithdrawalRequest[];
-  // FIX: Add missing 'notifications' prop to align with usage in App.tsx and the component itself.
   notifications: Notification[];
-  // FIX: Updated function signatures to return Promise<void> to match async handlers.
   onUpdateRequestStatus: (id: string, status: 'approved' | 'declined', data?: { reason: string }) => Promise<void>;
   onUpdateWithdrawalRequestStatus: (id: string, status: 'approved' | 'declined', data?: { reason: string }) => Promise<void>;
   onAddNotification: (data: { title: string; content: string; userId?: string }) => void;
   onUpdateNotification: (notification: Notification) => void;
   onDeleteNotification: (id: string) => void;
   onLogout: () => void;
+  onMarkNotificationAsRead: (notificationId: string) => void;
 }
 
 type AdminPage = 'dashboard' | 'users' | 'deposits' | 'withdrawals' | 'notifications';
@@ -41,6 +41,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
     onAddNotification,
     onUpdateNotification,
     onDeleteNotification,
+    onMarkNotificationAsRead,
 }) => {
   const [currentPage, setCurrentPage] = React.useState<AdminPage>('dashboard');
   const [initialUserFilter, setInitialUserFilter] = React.useState<UserFilter>('all');
@@ -62,9 +63,16 @@ const AdminApp: React.FC<AdminAppProps> = ({
     };
   }, []);
   
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     setSelectedNotification(notification);
     setIsNotificationsOpen(false);
+
+    try {
+      await api.put(`/api/notifications/${notification.id}/read`, {});
+      onMarkNotificationAsRead(notification.id);
+    } catch (error) {
+      console.error("Failed to mark notification as read for admin:", error);
+    }
   };
 
 

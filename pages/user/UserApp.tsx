@@ -18,19 +18,18 @@ import TeamLevelsPage from './TeamLevelsPage';
 interface UserAppProps {
   user: User;
   onLogout: () => void;
-  // FIX: Updated onUpdateUser to return a Promise<void> to match the async handler.
   onUpdateUser: (updatedData: Pick<User, 'firstName' | 'lastName' | 'email' | 'phone'>) => Promise<void>;
   notifications: Notification[];
   onAddWithdrawalRequest: (data: { amount: number; walletAddress: string; walletName: string; network: string; }) => Promise<void>;
-  onNotificationRead: (notificationId: string) => void;
   dailyClaim: DailyClaim | null;
   monthlyReward: MonthlyReward | null;
   onRefetchData: () => Promise<void>;
+  onMarkNotificationAsRead: (notificationId: string) => void;
 }
 
 type UserPage = 'dashboard' | 'deposit' | 'withdraw' | 'investment' | 'team' | 'team-levels' | 'referrals' | 'ranks' | 'about-us' | 'profile';
 
-const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notifications, onAddWithdrawalRequest, onNotificationRead, dailyClaim, monthlyReward, onRefetchData }) => {
+const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notifications, onAddWithdrawalRequest, dailyClaim, monthlyReward, onRefetchData, onMarkNotificationAsRead }) => {
   const [currentPage, setCurrentPage] = React.useState<UserPage>('dashboard');
   const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
   const [selectedNotification, setSelectedNotification] = React.useState<Notification | null>(null);
@@ -53,19 +52,12 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
     setSelectedNotification(notification);
     setIsNotificationsOpen(false); // Close dropdown when modal opens
 
-    // Only attempt to mark as read if it's a user-specific notification.
-    // Global notifications (without a userId) are just dismissed from the view.
-    if (notification.userId) {
-      try {
-        // FIX: Changed from PATCH to POST to align with the expected API endpoint.
-        await api.post(`/api/notifications/${notification.id}/read`, {});
-        onNotificationRead(notification.id);
-      } catch (error) {
-        console.error("Failed to mark notification as read:", error);
-      }
-    } else {
-      // For global notifications, just remove them from the UI for this session.
-      onNotificationRead(notification.id);
+    try {
+      // Mark notification as read via API for both user-specific and global notifications
+      await api.put(`/api/notifications/${notification.id}/read`, {});
+      onMarkNotificationAsRead(notification.id);
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
     }
   };
 
