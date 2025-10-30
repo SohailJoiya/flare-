@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Card from '../../components/Card';
 
 const aboutContentHtml = `
@@ -28,6 +28,31 @@ const aboutContentHtml = `
 `;
 
 const AboutUsPage: React.FC = () => {
+  const adContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (adContainerRef.current && adContainerRef.current.children.length === 0) {
+      const scriptOptions = document.createElement('script');
+      scriptOptions.type = 'text/javascript';
+      scriptOptions.innerHTML = `
+        atOptions = {
+          'key' : '920596804335e649c06f990c2fe84d0f',
+          'format' : 'iframe',
+          'height' : 60,
+          'width' : 468,
+          'params' : {}
+        };
+      `;
+      
+      const scriptInvoke = document.createElement('script');
+      scriptInvoke.type = 'text/javascript';
+      scriptInvoke.src = "//www.highperformanceformat.com/920596804335e649c06f990c2fe84d0f/invoke.js";
+      
+      adContainerRef.current.appendChild(scriptOptions);
+      adContainerRef.current.appendChild(scriptInvoke);
+    }
+  }, []);
+
   return (
     <div className="space-y-12 max-w-5xl mx-auto">
       <header className="text-center space-y-4">
@@ -37,6 +62,7 @@ const AboutUsPage: React.FC = () => {
         <p className="text-xl text-brand-gray max-w-3xl mx-auto">
           The simple way to invest, grow your network, and earn rewards.
         </p>
+        <div ref={adContainerRef} className="flex justify-center items-center w-[468px] h-[60px] mx-auto mt- add-div-not-click-able"></div>
       </header>
 
       <Card>
@@ -58,6 +84,11 @@ const AboutUsPage: React.FC = () => {
             </p>
         </div>
       </Card>
+      <style>{`
+        .add-div-not-click-able {
+          pointer-events: none;
+        }
+      `}</style>
     </div>
   );
 };
