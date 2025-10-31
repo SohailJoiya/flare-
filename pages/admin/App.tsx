@@ -76,12 +76,38 @@ const App: React.FC = () => {
 
     checkUserStatus();
 
-    const pathParts = window.location.pathname.split('/');
-    if (pathParts[1] === 'ref' && pathParts[2]) {
-      const code = decodeURIComponent(pathParts[2]);
-      setReferralCodeFromUrl(code);
-      setCurrentPage(prev => (prev === 'landing' ? 'signup' : prev));
+    // --- Start: Hash-based routing for referral links ---
+    // This is to prevent 404 errors on servers not configured for SPAs.
+    // Handles URLs like:
+    // https://domain.com/#/register?ref=CODE
+    // https://domain.com/#/ref/CODE
+    const hash = window.location.hash;
+
+    if (hash && hash.length > 1) {
+      // Remove '#' or '#/' from the beginning of the hash
+      const pathAndQuery = hash.startsWith('#/') ? hash.substring(2) : hash.substring(1);
+      
+      const [path, queryString] = pathAndQuery.split('?');
+      const urlParams = new URLSearchParams(queryString || '');
+      const pathParts = path.split('/');
+
+      let referralCode: string | null = null;
+      
+      // Case 1: #/register?ref=CODE
+      if (path.toLowerCase() === 'register' && urlParams.has('ref')) {
+        referralCode = urlParams.get('ref');
+      } 
+      // Case 2: #/ref/CODE
+      else if (pathParts[0].toLowerCase() === 'ref' && pathParts[1]) {
+        referralCode = decodeURIComponent(pathParts[1]);
+      }
+
+      if (referralCode) {
+        setReferralCodeFromUrl(referralCode);
+        setCurrentPage('signup');
+      }
     }
+    // --- End: Hash-based routing ---
   }, []);
 
   useEffect(() => {

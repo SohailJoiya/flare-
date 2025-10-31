@@ -93,7 +93,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
   const [profitHistory, setProfitHistory] = useState<ProfitHistoryItem[]>(user.profitHistory);
   const [countdown, setCountdown] = useState('');
 
-  const referralLink = user.referralLink || `https://flareautoearning.com/ref/${user.referralCode}`;
+  const referralLink = user.referralLink || `${window.location.origin}/#/ref/${user.referralCode}`;
 
   useEffect(() => {
     setProfitHistory(user.profitHistory);

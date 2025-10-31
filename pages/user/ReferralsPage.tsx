@@ -24,7 +24,7 @@ const ReferralsPage: React.FC<{ user: User }> = ({ user }) => {
   
   const referredUsersItemsPerPage = 10;
   
-  const referralLink = user.referralLink || `https://flareautoearning.com/ref/${user.referralCode}`;
+  const referralLink = user.referralLink || `${window.location.origin}/#/ref/${user.referralCode}`;
 
   const fetchReferredUsers = useCallback(async () => {
     setIsReferredUsersLoading(true);
