@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import Card from '../../components/Card';
+import React, {useEffect, useRef} from 'react'
+import Card from '../../components/Card'
 
 const aboutContentHtml = `
   <h2 class="!mt-0">Our Mission</h2>
@@ -25,15 +25,18 @@ const aboutContentHtml = `
   </ul>
   
   <p>Join Flare Auto Earning today and start your journey towards financial independence. Your future starts now.</p>
-`;
+`
 
 const AboutUsPage: React.FC = () => {
-  const adContainerRef = useRef<HTMLDivElement>(null);
+  const adContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (adContainerRef.current && adContainerRef.current.children.length === 0) {
-      const scriptOptions = document.createElement('script');
-      scriptOptions.type = 'text/javascript';
+    if (
+      adContainerRef.current &&
+      adContainerRef.current.children.length === 0
+    ) {
+      const scriptOptions = document.createElement('script')
+      scriptOptions.type = 'text/javascript'
       scriptOptions.innerHTML = `
         atOptions = {
           'key' : '920596804335e649c06f990c2fe84d0f',
@@ -42,46 +45,61 @@ const AboutUsPage: React.FC = () => {
           'width' : 468,
           'params' : {}
         };
-      `;
-      
-      const scriptInvoke = document.createElement('script');
-      scriptInvoke.type = 'text/javascript';
-      scriptInvoke.src = "//www.highperformanceformat.com/920596804335e649c06f990c2fe84d0f/invoke.js";
-      
-      adContainerRef.current.appendChild(scriptOptions);
-      adContainerRef.current.appendChild(scriptInvoke);
+      `
+
+      const scriptInvoke = document.createElement('script')
+      scriptInvoke.type = 'text/javascript'
+      scriptInvoke.src =
+        '//www.highperformanceformat.com/920596804335e649c06f990c2fe84d0f/invoke'
+
+      adContainerRef.current.appendChild(scriptOptions)
+      adContainerRef.current.appendChild(scriptInvoke)
     }
-  }, []);
+  }, [])
 
   return (
-    <div className="space-y-12 max-w-5xl mx-auto">
-      <header className="text-center space-y-4">
-        <h1 className="text-5xl font-extrabold text-white tracking-tight">
-          About <span className="text-brand-orange">Flare Auto Earning</span>
+    <div className='space-y-12 max-w-5xl mx-auto'>
+      <header className='text-center space-y-4'>
+        <h1 className='text-5xl font-extrabold text-white tracking-tight'>
+          About <span className='text-brand-orange'>Flare Auto Earning</span>
         </h1>
-        <p className="text-xl text-brand-gray max-w-3xl mx-auto">
+        <p className='text-xl text-brand-gray max-w-3xl mx-auto'>
           The simple way to invest, grow your network, and earn rewards.
         </p>
-        <div ref={adContainerRef} className="flex justify-center items-center w-[468px] h-[60px] mx-auto mt- add-div-not-click-able"></div>
+        <div
+          ref={adContainerRef}
+          className='flex justify-center items-center w-[468px] h-[60px] mx-auto mt- add-div-not-click-able'></div>
       </header>
 
       <Card>
-        <div 
-            className="prose prose-invert prose-p:text-brand-gray prose-h2:text-white prose-h2:text-3xl prose-h2:font-bold prose-a:text-brand-orange hover:prose-a:underline prose-li:text-brand-gray prose-strong:text-white max-w-none"
-            dangerouslySetInnerHTML={{ __html: aboutContentHtml }} 
+        <div
+          className='prose prose-invert prose-p:text-brand-gray prose-h2:text-white prose-h2:text-3xl prose-h2:font-bold prose-a:text-brand-orange hover:prose-a:underline prose-li:text-brand-gray prose-strong:text-white max-w-none'
+          dangerouslySetInnerHTML={{__html: aboutContentHtml}}
         />
       </Card>
 
       <Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center text-brand-gray">
-            <p>
-                <strong className="text-white">Website:</strong><br/>
-                <a href="http://www.faearing.com" target="_blank" rel="noopener noreferrer" className="text-brand-orange hover:underline">www.faearing.com</a>
-            </p>
-            <p>
-                <strong className="text-white">Support Email:</strong><br/>
-                <a href="mailto:support@faearing.com" className="text-brand-orange hover:underline">support@faearing.com</a>
-            </p>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-center text-brand-gray'>
+          <p>
+            <strong className='text-white'>Website:</strong>
+            <br />
+            <a
+              href='http://www.faearing.com'
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-brand-orange hover:underline'>
+              www.faearing.com
+            </a>
+          </p>
+          <p>
+            <strong className='text-white'>Support Email:</strong>
+            <br />
+            <a
+              href='mailto:support@faearing.com'
+              className='text-brand-orange hover:underline'>
+              support@faearing.com
+            </a>
+          </p>
         </div>
       </Card>
       <style>{`
@@ -90,7 +108,7 @@ const AboutUsPage: React.FC = () => {
         }
       `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default AboutUsPage;
+export default AboutUsPage
