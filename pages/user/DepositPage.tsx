@@ -35,8 +35,7 @@ const DepositPage: React.FC<DepositPageProps> = ({ onNavigate }) => {
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [wallets, setWallets] = useState<{ binance?: string; trust?: string }>({});
-  const [copiedAddress, setCopiedAddress] = useState<'binance' | 'trust' | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState<'trc20' | 'bep20' | null>(null);
 
   // State for deposit history list
   const [allDeposits, setAllDeposits] = useState<DepositRequest[]>([]);
@@ -69,20 +68,7 @@ const DepositPage: React.FC<DepositPageProps> = ({ onNavigate }) => {
       return allDeposits.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [allDeposits, currentPage]);
 
-  useEffect(() => {
-    const fetchWallets = async () => {
-        try {
-            const data = await api.get<{ binance: string, trust: string }>('/api/system/public/wallets', true);
-            setWallets(data);
-        } catch (error) {
-            console.error("Failed to fetch deposit wallets", error);
-            setError('Could not load deposit addresses. Please try again later.');
-        }
-    };
-    fetchWallets();
-  }, []);
-
-  const handleCopy = (address: string, type: 'binance' | 'trust') => {
+  const handleCopy = (address: string, type: 'trc20' | 'bep20') => {
     navigator.clipboard.writeText(address);
     setCopiedAddress(type);
     setTimeout(() => setCopiedAddress(null), 2000);
@@ -130,8 +116,11 @@ const DepositPage: React.FC<DepositPageProps> = ({ onNavigate }) => {
     }
   };
   
-  const binanceAddress = wallets.binance || 'Loading address...';
-  const trustAddress = wallets.trust || 'Loading address...';
+  const trc20Address = 'TGcXy1cVBMC1brae3duEn1L9Dxjhc6Dgwb';
+  const bep20Address = '0xcF40f23EEb00052A121db96d7FC2f318358f7E68';
+  
+  const trc20QrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${trc20Address}`;
+  const bep20QrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${bep20Address}`;
 
   return (
     <div className="space-y-12">
@@ -143,42 +132,54 @@ const DepositPage: React.FC<DepositPageProps> = ({ onNavigate }) => {
               To add funds to your wallet, please follow the steps below. Deposits are sent directly to our official accounts and are manually verified for security.
             </p>
           </div>
-          {error && !wallets.binance && <p className="text-red-500">{error}</p>}
+          
           <Card>
-              <h2 className="text-xl font-semibold text-brand-primary mb-3">Official Binance Account</h2>
-              <p className="text-sm text-gray-300">Wallet Address:</p>
-              <div 
-                  className="flex items-center justify-between font-mono bg-gray-900/50 p-3 rounded-md my-1 border border-gray-700 cursor-pointer hover:bg-gray-800/50 transition-colors break-all"
-                  onClick={() => handleCopy(binanceAddress, 'binance')}
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => e.key === 'Enter' && handleCopy(binanceAddress, 'binance')}
-              >
-                  <span>{binanceAddress}</span>
-                  <span className="ml-4 text-sm font-sans font-semibold text-brand-primary flex-shrink-0">
-                      {copiedAddress === 'binance' ? 'Copied!' : 'Copy'}
-                  </span>
+            <div className="flex flex-col sm:flex-row gap-6 items-center">
+              <div className="flex-shrink-0 bg-white p-2 rounded-lg">
+                <img src={trc20QrUrl} alt="TRC20 Wallet QR Code" className="w-32 h-32" />
               </div>
-              <p className="text-sm text-gray-300 mt-2">Network:</p>
-              <p className="font-mono bg-gray-900 p-2 rounded my-1">BEP20</p>
+              <div className="flex-1 w-full">
+                <h2 className="text-xl font-semibold text-brand-primary mb-3">Official Wallet (USDT TRC20)</h2>
+                <p className="text-sm text-gray-300">Wallet Address:</p>
+                <div 
+                    className="flex items-center justify-between font-mono bg-gray-900/50 p-3 rounded-md my-1 border border-gray-700 cursor-pointer hover:bg-gray-800/50 transition-colors break-all"
+                    onClick={() => handleCopy(trc20Address, 'trc20')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === 'Enter' && handleCopy(trc20Address, 'trc20')}
+                >
+                    <span className="text-sm">{trc20Address}</span>
+                    <span className="ml-4 text-sm font-sans font-semibold text-brand-primary flex-shrink-0">
+                        {copiedAddress === 'trc20' ? 'Copied!' : 'Copy'}
+                    </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Note: Only send USDT on the TRC20 network to this address.</p>
+              </div>
+            </div>
           </Card>
           <Card>
-              <h2 className="text-xl font-semibold text-brand-primary mb-3">Official Trust Wallet</h2>
-              <p className="text-sm text-gray-300">Wallet Address:</p>
-               <div 
-                  className="flex items-center justify-between font-mono bg-gray-900/50 p-3 rounded-md my-1 border border-gray-700 cursor-pointer hover:bg-gray-800/50 transition-colors break-all"
-                  onClick={() => handleCopy(trustAddress, 'trust')}
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => e.key === 'Enter' && handleCopy(trustAddress, 'trust')}
-              >
-                  <span>{trustAddress}</span>
-                  <span className="ml-4 text-sm font-sans font-semibold text-brand-primary flex-shrink-0">
-                      {copiedAddress === 'trust' ? 'Copied!' : 'Copy'}
-                  </span>
+            <div className="flex flex-col sm:flex-row gap-6 items-center">
+              <div className="flex-shrink-0 bg-white p-2 rounded-lg">
+                <img src={bep20QrUrl} alt="BEP20 Wallet QR Code" className="w-32 h-32" />
               </div>
-              <p className="text-sm text-gray-300 mt-2">Network:</p>
-              <p className="font-mono bg-gray-900 p-2 rounded my-1">ERC20</p>
+              <div className="flex-1 w-full">
+                <h2 className="text-xl font-semibold text-brand-primary mb-3">Official Wallet (USDT BEP20)</h2>
+                <p className="text-sm text-gray-300">Wallet Address:</p>
+                 <div 
+                    className="flex items-center justify-between font-mono bg-gray-900/50 p-3 rounded-md my-1 border border-gray-700 cursor-pointer hover:bg-gray-800/50 transition-colors break-all"
+                    onClick={() => handleCopy(bep20Address, 'bep20')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === 'Enter' && handleCopy(bep20Address, 'bep20')}
+                >
+                    <span className="text-sm">{bep20Address}</span>
+                    <span className="ml-4 text-sm font-sans font-semibold text-brand-primary flex-shrink-0">
+                        {copiedAddress === 'bep20' ? 'Copied!' : 'Copy'}
+                    </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Note: Only send USDT on the BEP20 network to this address.</p>
+              </div>
+            </div>
           </Card>
         </div>
         <Card>
