@@ -79,7 +79,7 @@ const ShareIcon: React.FC<{ path: string }> = ({ path }) => (
 
 interface UserDashboardProps {
   user: User;
-  onNavigate: (page: 'deposit' | 'withdraw') => void;
+  onNavigate: (page: 'deposit' | 'withdraw' | 'terms' | 'whitepaper') => void;
   dailyClaim: DailyClaim | null;
   onClaimSuccess: () => Promise<void>;
 }
@@ -332,23 +332,27 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
           <h2 className="text-2xl font-semibold text-white mb-4">Documents & Resources</h2>
           <Card>
             <div className="flex flex-col sm:flex-row gap-4 justify-around">
-                <a href="/whitepaper.pdf" target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button variant="secondary" className="w-full flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                        </svg>
-                        Whitepaper
-                    </Button>
-                </a>
-                <a href="/terms-of-service.pdf" target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button variant="secondary" className="w-full flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                            <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                        </svg>
-                        Terms of Service
-                    </Button>
-                </a>
+                <Button 
+                    variant="secondary" 
+                    className="w-full flex-1 flex items-center justify-center"
+                    onClick={() => onNavigate('whitepaper')}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2-2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    Whitepaper
+                </Button>
+                <Button 
+                    variant="secondary" 
+                    className="w-full flex-1 flex items-center justify-center"
+                    onClick={() => onNavigate('terms')}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                        <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                    </svg>
+                    Terms of Service
+                </Button>
             </div>
           </Card>
       </div>
