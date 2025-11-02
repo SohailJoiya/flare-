@@ -39,7 +39,6 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-        // Fix: Corrected the ref name from `notificationButton` to `notificationButtonRef`.
         if (notificationButtonRef.current && !notificationButtonRef.current.contains(event.target as Node)) {
             setIsNotificationsOpen(false);
         }
@@ -75,8 +74,11 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
     { id: 'about-us', label: 'About Us', mobileLabel: 'About', icon: <Icon path="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
     { id: 'whitepaper', label: 'Whitepaper', mobileLabel: 'Docs', icon: <Icon path="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /> },
     { id: 'terms', label: 'Terms of Service', mobileLabel: 'Terms', icon: <Icon path="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
-    { id: 'profile', label: 'My Profile', mobileLabel: 'Profile', icon: <Icon path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /> },
   ];
+
+  const headerNavItems = navItems.filter(
+    (item) => item.id !== 'whitepaper' && item.id !== 'terms'
+  );
 
   const renderPage = () => {
     switch (currentPage) {
@@ -118,7 +120,7 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
               <button onClick={() => setCurrentPage('dashboard')} className="font-bold text-2xl text-white focus:outline-none transition-opacity hover:opacity-80">FAEARING</button>
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-1">
-                  {navItems.map((item) => (
+                  {headerNavItems.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setCurrentPage(item.id)}
@@ -173,7 +175,12 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
                   </div>
                 )}
               </div>
-                <span className="text-brand-gray hidden sm:block">Welcome, {user.firstName}</span>
+                <button
+                  onClick={() => setCurrentPage('profile')}
+                  className="text-brand-gray hidden sm:block hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-primary rounded-md px-2 transition-colors"
+                >
+                    Welcome, {user.firstName}
+                </button>
                 <Button onClick={onLogout} variant="secondary">Logout</Button>
             </div>
           </div>
