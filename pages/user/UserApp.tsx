@@ -175,13 +175,28 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
                   </div>
                 )}
               </div>
-                <button
-                  onClick={() => setCurrentPage('profile')}
-                  className="text-brand-gray hidden sm:block hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-primary rounded-md px-2 transition-colors"
-                >
-                    Welcome, {user.firstName}
-                </button>
-                <Button onClick={onLogout} variant="secondary">Logout</Button>
+                
+                {/* Desktop view */}
+                <div className="hidden sm:flex items-center space-x-4">
+                  <button
+                    onClick={() => setCurrentPage('profile')}
+                    className="text-brand-gray hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-primary rounded-md px-2 transition-colors"
+                  >
+                      Welcome, {user.firstName}
+                  </button>
+                  <Button onClick={onLogout} variant="secondary">Logout</Button>
+                </div>
+
+                {/* Mobile view */}
+                <div className="flex sm:hidden items-center space-x-2">
+                    <button
+                        onClick={() => setCurrentPage('profile')}
+                        className="text-brand-gray hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-primary rounded-md px-2 py-1 transition-colors text-sm font-medium"
+                    >
+                        {user.firstName}
+                    </button>
+                    <Button onClick={onLogout} variant="secondary" className="!px-3 !py-1 text-xs">Logout</Button>
+                </div>
             </div>
           </div>
         </nav>
