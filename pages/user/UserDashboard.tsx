@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, ProfitHistoryItem, DailyClaim } from '../../types';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../services/api';
+import ClaimBonusModal from '../../components/ClaimBonusModal';
 
 const AnimatedNumber: React.FC<{
   value: number;
@@ -86,29 +87,57 @@ interface UserDashboardProps {
 
 const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyClaim, onClaimSuccess }) => {
   const [copiedReferral, setCopiedReferral] = React.useState(false);
-  const [claimMessage, setClaimMessage] = useState('');
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
   const shareContainerRef = useRef<HTMLDivElement>(null);
   const [profitHistory, setProfitHistory] = useState<ProfitHistoryItem[]>(user.profitHistory);
   const [countdown, setCountdown] = useState('');
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
 
   const referralLink = user.referralLink || `${window.location.origin}/ref/${user.referralCode}`;
+
+  const isEligible = useMemo(() => {
+    if (!dailyClaim) return false;
+    if (dailyClaim.eligible) return true;
+
+    // If backend says not eligible, check if it's a new day based on midnight reset.
+    // The backend seems to use a 24h cooldown. We can estimate the last claim time from nextClaimAt.
+    if (dailyClaim.nextClaimAt) {
+      const nextClaimTimestamp = new Date(dailyClaim.nextClaimAt).getTime();
+      // Assuming a 24-hour cooldown from the backend to calculate last claim time
+      const lastClaimTimestamp = nextClaimTimestamp - 24 * 60 * 60 * 1000;
+      
+      const lastClaimDate = new Date(lastClaimTimestamp);
+      lastClaimDate.setHours(0, 0, 0, 0);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (today.getTime() > lastClaimDate.getTime()) {
+        return true;
+      }
+    }
+    return false;
+  }, [dailyClaim]);
 
   useEffect(() => {
     setProfitHistory(user.profitHistory);
   }, [user.profitHistory]);
 
   useEffect(() => {
-    if (dailyClaim && !dailyClaim.eligible && dailyClaim.nextClaimAt) {
+    if (!isEligible) {
         const interval = setInterval(() => {
-            const now = new Date().getTime();
-            const nextClaimTime = new Date(dailyClaim.nextClaimAt).getTime();
-            const distance = nextClaimTime - now;
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0); // Set to next midnight
+
+            const distance = tomorrow.getTime() - now.getTime();
 
             if (distance < 0) {
                 setCountdown('Ready to claim!');
                 clearInterval(interval);
+                onClaimSuccess(); // Refetch data
                 return;
             }
 
@@ -119,8 +148,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
             setCountdown(`${hours}h ${minutes}m ${seconds}s`);
         }, 1000);
         return () => clearInterval(interval);
+    } else {
+        setCountdown(''); // Clear countdown if eligible
     }
-  }, [dailyClaim]);
+  }, [isEligible, onClaimSuccess]);
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -131,12 +162,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
   const handleClaimProfit = async () => {
     try {
         await api.post('/api/profit/claim-daily', {});
-        setClaimMessage(`Congratulations! Your daily profit has been claimed.`);
-        await onClaimSuccess();
-    } catch (err: any) {
-        setClaimMessage(err.message || 'Failed to claim profit.');
-    } finally {
-        setTimeout(() => setClaimMessage(''), 3000);
+        await onClaimSuccess(); // This will refetch data and update the UI
+    } catch (err) {
+        // Re-throw the error so the modal can catch it and display it
+        console.error("Failed to claim profit:", err);
+        throw err;
     }
   };
 
@@ -201,11 +231,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex-grow text-center md:text-left">
             <h2 className="text-2xl font-bold text-white">Claim Your Daily Profit</h2>
-            {claimMessage && <p className="text-sm text-green-400 mt-2 transition-opacity duration-300">{claimMessage}</p>}
             {user.walletBalance < 35 ? (
               <p className="text-sm text-yellow-500 mt-1">Your wallet balance must be at least $35 to claim the bonus.</p>
             ) : (
-              !dailyClaim?.eligible && countdown && (
+              !isEligible && countdown && (
                 <p className="text-sm text-gray-400 mt-1">Next claim in: <span className="font-semibold text-gray-300">{countdown}</span></p>
               )
             )}
@@ -217,11 +246,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
               className="rounded-lg object-cover"
             />
             <Button 
-              onClick={handleClaimProfit} 
-              disabled={!dailyClaim?.eligible || user.walletBalance < 35}
+              onClick={() => setIsClaimModalOpen(true)} 
+              disabled={!isEligible || user.walletBalance < 35}
               className="w-full sm:w-auto flex-shrink-0 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"
             >
-              {dailyClaim?.eligible ? 'Claim Now' : 'Claimed for Today'}
+              {isEligible ? 'Claim Now' : 'Claimed for Today'}
             </Button>
           </div>
         </div>
@@ -372,6 +401,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
           animation: scale-in-dropdown 0.2s ease-out forwards;
         }
       `}</style>
+
+      <ClaimBonusModal
+        isOpen={isClaimModalOpen}
+        onClose={() => setIsClaimModalOpen(false)}
+        onClaim={handleClaimProfit}
+      />
     </div>
   );
 };
