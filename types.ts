@@ -66,6 +66,7 @@ export interface User {
   commissionHistory: CommissionHistoryItem[];
   team: TeamMember[];
   joinDate: string;
+  timeZone?: string;
 }
 
 export interface DepositRequest {

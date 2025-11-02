@@ -169,7 +169,20 @@ const App: React.FC = () => {
   const handleLogin = async (credentials: {email: string, password: string}) => {
     const response = await api.post<LoginResponse>('/api/auth/login', credentials, true);
     localStorage.setItem('authToken', response.token);
-    setCurrentUser(processUser(response.user));
+    let user = processUser(response.user);
+
+    if (!user.timeZone) {
+      try {
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const updatedUserFromApi = await api.put<any>('/api/users/me', { timeZone });
+        user = processUser({ ...user, ...updatedUserFromApi });
+      } catch (error) {
+        console.error("Failed to update user timezone on login:", error);
+        // This is not a critical error, so we can proceed with the login
+      }
+    }
+    
+    setCurrentUser(user);
   };
 
   const handleLogout = () => {

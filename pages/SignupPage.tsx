@@ -41,7 +41,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigate, referralC
     setError('');
     setIsLoading(true);
     try {
-      await onSignup(formData);
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      await onSignup({ ...formData, timeZone });
       // App.tsx handles navigation to login on success
     } catch (err: any) {
         setError(err.message || 'Failed to create account. Please try again.');

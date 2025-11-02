@@ -44,6 +44,7 @@ export const processUser = (userFromApi: any): User => {
       commissionHistory: userFromApi.commissionHistory || [],
       team: userFromApi.team || [],
       joinDate: formatDate(userFromApi.createdAt),
+      timeZone: userFromApi.timeZone,
     };
   };
 
