@@ -8,14 +8,17 @@ import AdminApp from './AdminApp';
 import ForgotPasswordPage from '../ForgotPasswordPage';
 import OtpVerificationPage from '../OtpVerificationPage';
 import ResetPasswordPage from '../ResetPasswordPage';
+import EmailVerificationPage from '../EmailVerificationPage';
 import api from '../../services/api';
 import { processUser, processDepositRequest, processWithdrawalRequest, processNotification, processDashboardData } from '../../processors';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [appIsLoading, setAppIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'login' | 'signup' | 'otp-verification' | 'forgot-password' | 'reset-password'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'login' | 'signup' | 'otp-verification' | 'forgot-password' | 'reset-password' | 'email-verification'>('landing');
   const [otpPurpose, setOtpPurpose] = useState<'signup' | 'reset-password'>('signup');
+  const [emailForVerification, setEmailForVerification] = useState<string>('');
+  const [resetToken, setResetToken] = useState<string>('');
   const [depositRequests, setDepositRequests] = useState<DepositRequest[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -194,25 +197,35 @@ const App: React.FC = () => {
   const handleSignup = async (signupData: object) => {
     const { phone, referredBy, ...rest }: any = signupData;
     const payload = { ...rest, referralCode: referredBy || '' };
-    await api.post('/api/users/register', payload, true);
-    setCurrentPage('login');
+    await api.post('/api/auth/register', payload, true);
+    setEmailForVerification((signupData as any).email);
+    setCurrentPage('email-verification');
   };
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async (email: string) => {
+    await api.post('/api/auth/forgot-password', { email }, true);
+    setEmailForVerification(email);
     setOtpPurpose('reset-password');
     setCurrentPage('otp-verification');
   };
 
-  const handleOtpVerification = () => {
+  const handleOtpVerification = async (otp: string) => {
     if (otpPurpose === 'signup') {
+      // Assuming signup verification is different or not yet implemented via OTP
       setCurrentPage('login');
     } else {
+      // This is for password reset
+      await api.post('/api/auth/verify-reset-otp', { otp }, true);
+      // If successful, the email in `emailForVerification` is now validated.
+      setResetToken(otp);
       setCurrentPage('reset-password');
     }
   };
 
-  const handlePasswordReset = () => {
+  const handlePasswordReset = async (password: string) => {
+    await api.post('/api/auth/set-new-password', { email: emailForVerification, password, resetToken }, true);
     setCurrentPage('login');
+    setResetToken('');
   };
 
   const updateRequestStatus = async (id: string, status: 'approved' | 'declined', data?: { reason: string }) => {
@@ -314,6 +327,8 @@ const App: React.FC = () => {
         return <OtpVerificationPage onVerify={handleOtpVerification} purpose={otpPurpose} />;
       case 'reset-password':
         return <ResetPasswordPage onReset={handlePasswordReset} />;
+      case 'email-verification':
+        return <EmailVerificationPage email={emailForVerification} onNavigate={setCurrentPage} />;
       default:
         return <LandingPage onNavigate={setCurrentPage} />;
     }

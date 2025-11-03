@@ -3,13 +3,15 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 
 interface OtpVerificationPageProps {
-  onVerify: () => void;
+  onVerify: (otp: string) => Promise<void>;
   purpose: 'signup' | 'reset-password';
 }
 
 const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({ onVerify, purpose }) => {
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const title = purpose === 'signup' ? 'Verify Your Account' : 'Verify Your Identity';
   const description = purpose === 'signup' 
@@ -34,10 +36,18 @@ const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({ onVerify, pur
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would verify otp.join('')
-    onVerify();
+    setError('');
+    setIsLoading(true);
+    try {
+      await onVerify(otp.join(''));
+      // App.tsx handles navigation on success
+    } catch (err: any) {
+      setError(err.message || 'Verification failed. Please check the code and try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -46,7 +56,7 @@ const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({ onVerify, pur
         <h2 className="text-3xl font-bold text-center text-white mb-4">{title}</h2>
         <p className="text-center text-gray-400 mb-8">{description}</p>
         <form onSubmit={handleSubmit}>
-          <div className="flex justify-center space-x-2 mb-8">
+          <div className="flex justify-center space-x-2 mb-6">
             {otp.map((data, index) => (
               <input
                 key={index}
@@ -57,21 +67,17 @@ const OtpVerificationPage: React.FC<OtpVerificationPageProps> = ({ onVerify, pur
                 onChange={(e) => handleChange(e.target, index)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
                 onFocus={(e) => e.target.select()}
-                className="w-12 h-14 text-center text-2xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:ring-brand-orange focus:border-brand-orange transition"
+                className="w-12 h-14 text-center text-2xl font-semibold bg-gray-800 border border-gray-600 rounded-md text-white focus:ring-brand-primary focus:border-brand-primary transition"
                 required
+                disabled={isLoading}
               />
             ))}
           </div>
-          <Button type="submit" variant="success" className="w-full">
-            Verify
+          {error && <p className="text-center text-sm text-red-500 mb-4">{error}</p>}
+          <Button type="submit" variant="success" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Verifying...' : 'Verify'}
           </Button>
         </form>
-        <p className="text-center text-gray-400 mt-6">
-          Didn't receive the code?{' '}
-          <button className="font-semibold text-brand-orange hover:underline">
-            Resend OTP
-          </button>
-        </p>
       </Card>
     </div>
   );
