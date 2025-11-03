@@ -97,26 +97,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
   const referralLink = user.referralLink || `${window.location.origin}/ref/${user.referralCode}`;
 
   const isEligible = useMemo(() => {
-    if (!dailyClaim) return false;
-    if (dailyClaim.eligible) return true;
-
-    // If backend says not eligible, check if it's a new day based on midnight reset.
-    // The backend seems to use a 24h cooldown. We can estimate the last claim time from nextClaimAt.
-    if (dailyClaim.nextClaimAt) {
-      const nextClaimTimestamp = new Date(dailyClaim.nextClaimAt).getTime();
-      // Assuming a 24-hour cooldown from the backend to calculate last claim time
-      const lastClaimTimestamp = nextClaimTimestamp - 24 * 60 * 60 * 1000;
-      
-      const lastClaimDate = new Date(lastClaimTimestamp);
-      lastClaimDate.setHours(0, 0, 0, 0);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (today.getTime() > lastClaimDate.getTime()) {
-        return true;
-      }
+    if (!dailyClaim) {
+      return false;
     }
+    // Trust the backend's flag first.
+    if (dailyClaim.eligible) {
+      return true;
+    }
+    // If backend says not eligible, we can still check against nextClaimAt
+    // to make the frontend resilient to timing issues or delayed data fetches.
+    // The claim will still be validated by the server.
+    if (dailyClaim.nextClaimAt) {
+      return new Date().getTime() >= new Date(dailyClaim.nextClaimAt).getTime();
+    }
+    // Default to not eligible if backend says so and provides no timestamp.
     return false;
   }, [dailyClaim]);
 
@@ -125,33 +119,31 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
   }, [user.profitHistory]);
 
   useEffect(() => {
-    if (!isEligible) {
-        const interval = setInterval(() => {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0); // Set to next midnight
+    if (dailyClaim && !isEligible && dailyClaim.nextClaimAt) {
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const nextClaimTime = new Date(dailyClaim.nextClaimAt).getTime();
+        const distance = nextClaimTime - now;
 
-            const distance = tomorrow.getTime() - now.getTime();
+        if (distance < 0) {
+          setCountdown('Ready to claim!');
+          clearInterval(interval);
+          // Refetch data to update eligibility from the server
+          onClaimSuccess(); 
+          return;
+        }
 
-            if (distance < 0) {
-                setCountdown('Ready to claim!');
-                clearInterval(interval);
-                onClaimSuccess(); // Refetch data
-                return;
-            }
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            setCountdown(`${hours}h ${minutes}m ${seconds}s`);
-        }, 1000);
-        return () => clearInterval(interval);
+        setCountdown(`${hours}h ${minutes}m ${seconds}s`);
+      }, 1000);
+      return () => clearInterval(interval);
     } else {
-        setCountdown(''); // Clear countdown if eligible
+      setCountdown(''); // Clear countdown if eligible or no next claim date
     }
-  }, [isEligible, onClaimSuccess]);
+  }, [isEligible, dailyClaim, onClaimSuccess]);
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
