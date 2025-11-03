@@ -161,7 +161,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
 
   const handleClaimProfit = async () => {
     try {
-        await api.post('/api/profit/claim-daily', {});
+        const currentTime = new Date().toISOString();
+        await api.post('/api/profit/claim-daily', { claimedAt: currentTime });
         await onClaimSuccess(); // This will refetch data and update the UI
     } catch (err) {
         // Re-throw the error so the modal can catch it and display it
