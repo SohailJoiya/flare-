@@ -72,6 +72,70 @@ const StatCard: React.FC<{ title: string; value: string | number; icon?: React.R
   );
 };
 
+// --- START: NEW LEVEL CARD LOGIC & COMPONENT ---
+
+interface UserLevel {
+  level: number;
+  name: string;
+  theme: {
+    gradient: string;
+    textColor: string;
+    shadow: string;
+  };
+}
+
+const levelTiers = [
+  { level: 1, name: 'Level 1', minInvest: 0, theme: { gradient: 'from-gray-700 to-gray-800', textColor: 'text-gray-300', shadow: 'shadow-gray-500/20' } },
+  { level: 2, name: 'Level 2', minInvest: 5000, theme: { gradient: 'from-cyan-500 to-blue-500', textColor: 'text-cyan-200', shadow: 'shadow-cyan-500/30' } },
+  { level: 3, name: 'Level 3', minInvest: 10000, theme: { gradient: 'from-purple-500 to-indigo-500', textColor: 'text-purple-200', shadow: 'shadow-purple-500/30' } },
+  { level: 4, name: 'Level 4', minInvest: 30000, theme: { gradient: 'from-brand-primary to-red-600', textColor: 'text-rose-200', shadow: 'shadow-brand-primary/30' } },
+];
+
+const getUserLevelData = (levelName?: string | number): UserLevel => {
+  // Convert any input to string or default to '1'.
+  const nameAsString = String(levelName || '1');
+
+  // Try to find by exact name first, case-insensitive (e.g., "Level 1").
+  let currentTier = levelTiers.find(tier => tier.name.toLowerCase() === nameAsString.toLowerCase());
+
+  // If not found by name, parse a number from the string and try to find by level number.
+  if (!currentTier) {
+    const levelNumberMatch = nameAsString.match(/\d+/);
+    if (levelNumberMatch) {
+      const levelNumber = parseInt(levelNumberMatch[0], 10);
+      currentTier = levelTiers.find(tier => tier.level === levelNumber);
+    }
+  }
+
+  // Fallback to the first tier if no match is found.
+  if (!currentTier) {
+    currentTier = levelTiers[0];
+  }
+
+  return {
+    level: currentTier.level,
+    name: currentTier.name, // Use the canonical name from the tier data for consistency.
+    theme: currentTier.theme,
+  };
+};
+
+const LevelCard: React.FC<{ levelName?: string | number }> = ({ levelName }) => {
+  const levelData = getUserLevelData(levelName);
+
+  return (
+    <Card className={`relative overflow-hidden flex flex-col justify-center items-center h-full animated-level-card border-2 ${levelData.theme.shadow} border-transparent hover:border-white/30 text-center`}>
+        <div className={`absolute -inset-8 bg-gradient-to-br ${levelData.theme.gradient} opacity-20 blur-3xl animate-pulse-slow -z-10`}></div>
+        <div>
+            <h3 className="text-gray-400">Your Level</h3>
+            <p className={`text-5xl font-bold ${levelData.theme.textColor} mt-1 text-shadow`}>{levelData.name}</p>
+        </div>
+    </Card>
+  );
+};
+
+
+// --- END: NEW LEVEL CARD LOGIC & COMPONENT ---
+
 const ShareIcon: React.FC<{ path: string }> = ({ path }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
         <path d={path} />
@@ -252,9 +316,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
       {/* Earnings Summary Section */}
       <div>
         <h2 className="text-2xl font-semibold text-white mb-4">Earnings Summary</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard title="Today's Profit" value={user.dailyProfit} />
           <StatCard title="Total Profit" value={user.totalProfit} />
+         <LevelCard levelName={user?.user_level} />
         </div>
       </div>
       
@@ -392,6 +457,31 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
         }
         .animate-scale-in-dropdown {
           animation: scale-in-dropdown 0.2s ease-out forwards;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); opacity: 0.2; }
+            50% { transform: scale(1.05); opacity: 0.3; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .text-shadow {
+            text-shadow: 0px 2px 10px rgba(0,0,0,0.5);
+        }
+        @keyframes card-enter-anim {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animated-level-card {
+            animation: card-enter-anim 0.5s ease-out forwards;
+            opacity: 0;
+            animation-delay: 200ms; /* Delay to animate after other cards */
         }
       `}</style>
 

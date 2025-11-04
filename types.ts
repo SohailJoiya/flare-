@@ -55,6 +55,7 @@ export interface User {
   referredBy?: string;
   walletBalance: number;
   totalInvested: number;
+  user_level?: string | number;
   teamSize: number;
   teamInvested: number;
   totalWithdrawal: number;

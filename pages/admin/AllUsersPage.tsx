@@ -90,6 +90,28 @@ const AllUsersPage: React.FC<AllUsersPageProps> = ({ initialFilter = 'all' }) =>
     }
   };
 
+  const handleUnblockUser = async (userId: string) => {
+    const confirmAction = window.confirm(
+      `Are you sure you want to unblock this user? They will regain access to their account.`
+    );
+
+    if (confirmAction) {
+      try {
+        await api.put(`/api/admin/users/${userId}/unblock`);
+        // Update user in local state for immediate feedback
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user.id === userId ? { ...user, status: 'active' } : user
+          )
+        );
+      } catch (error) {
+        console.error(`Failed to unblock user:`, error);
+        alert(`Could not unblock the user. Please try again.`);
+      }
+    }
+  };
+
+
   const getUserLevel = (totalInvested: number): number => {
     if (totalInvested >= 30000) return 4;
     if (totalInvested >= 10000) return 3;
@@ -193,7 +215,13 @@ const AllUsersPage: React.FC<AllUsersPageProps> = ({ initialFilter = 'all' }) =>
                           Block
                         </Button>
                       ) : (
-                        <span className="text-sm text-gray-500 italic">Blocked</span>
+                        <Button
+                          onClick={() => handleUnblockUser(user.id)}
+                          variant="success"
+                          className="!px-3 !py-1 text-sm"
+                        >
+                          Unblock
+                        </Button>
                       )}
                     </td>
                   </tr>

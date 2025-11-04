@@ -33,6 +33,7 @@ export const processUser = (userFromApi: any): User => {
       // FIX: Added 'ballence' as a possible field from the API to correctly parse the user's balance.
       walletBalance: userFromApi.ballence ?? userFromApi.balance ?? userFromApi.walletBalance ?? 0,
       totalInvested: userFromApi.totalInvested ?? 0,
+      user_level: userFromApi.user_level,
       teamSize: userFromApi.teamCount ?? userFromApi.teamSize ?? 0,
       teamInvested: userFromApi.teamInvested ?? 0,
       totalWithdrawal: userFromApi.totalWithdrawal ?? 0,
