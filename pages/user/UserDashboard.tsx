@@ -72,7 +72,7 @@ const StatCard: React.FC<{ title: string; value: string | number; icon?: React.R
   );
 };
 
-// --- START: NEW LEVEL CARD LOGIC & COMPONENT ---
+// --- START: NEW LEVEL LOGIC ---
 
 interface UserLevel {
   level: number;
@@ -84,57 +84,79 @@ interface UserLevel {
   };
 }
 
-const levelTiers = [
+const levelTiers: { level: number; name: string; minInvest: number; theme: UserLevel['theme'] }[] = [
   { level: 1, name: 'Level 1', minInvest: 0, theme: { gradient: 'from-gray-700 to-gray-800', textColor: 'text-gray-300', shadow: 'shadow-gray-500/20' } },
   { level: 2, name: 'Level 2', minInvest: 5000, theme: { gradient: 'from-cyan-500 to-blue-500', textColor: 'text-cyan-200', shadow: 'shadow-cyan-500/30' } },
   { level: 3, name: 'Level 3', minInvest: 10000, theme: { gradient: 'from-purple-500 to-indigo-500', textColor: 'text-purple-200', shadow: 'shadow-purple-500/30' } },
   { level: 4, name: 'Level 4', minInvest: 30000, theme: { gradient: 'from-brand-primary to-red-600', textColor: 'text-rose-200', shadow: 'shadow-brand-primary/30' } },
 ];
 
-const getUserLevelData = (levelName?: string | number): UserLevel => {
-  // Convert any input to string or default to '1'.
-  const nameAsString = String(levelName || '1');
+const getUserLevelData = (totalInvested: number, levelName?: string | number): UserLevel => {
+  // First, try to determine level by investment amount for accuracy
+  const investmentLevel = levelTiers.slice().reverse().find(tier => totalInvested >= tier.minInvest);
+  if (investmentLevel) {
+    return {
+      level: investmentLevel.level,
+      name: investmentLevel.name,
+      theme: investmentLevel.theme,
+    };
+  }
+  
+  // Fallback to using levelName if provided
+  if (levelName) {
+    const nameAsString = String(levelName);
+    let currentTier = levelTiers.find(tier => tier.name.toLowerCase() === nameAsString.toLowerCase());
 
-  // Try to find by exact name first, case-insensitive (e.g., "Level 1").
-  let currentTier = levelTiers.find(tier => tier.name.toLowerCase() === nameAsString.toLowerCase());
-
-  // If not found by name, parse a number from the string and try to find by level number.
-  if (!currentTier) {
-    const levelNumberMatch = nameAsString.match(/\d+/);
-    if (levelNumberMatch) {
-      const levelNumber = parseInt(levelNumberMatch[0], 10);
-      currentTier = levelTiers.find(tier => tier.level === levelNumber);
+    if (!currentTier) {
+      const levelNumberMatch = nameAsString.match(/\d+/);
+      if (levelNumberMatch) {
+        const levelNumber = parseInt(levelNumberMatch[0], 10);
+        currentTier = levelTiers.find(tier => tier.level === levelNumber);
+      }
     }
+    if (currentTier) return { level: currentTier.level, name: currentTier.name, theme: currentTier.theme };
   }
 
-  // Fallback to the first tier if no match is found.
-  if (!currentTier) {
-    currentTier = levelTiers[0];
-  }
-
+  // Default to the first level if nothing matches
   return {
-    level: currentTier.level,
-    name: currentTier.name, // Use the canonical name from the tier data for consistency.
-    theme: currentTier.theme,
+    level: levelTiers[0].level,
+    name: levelTiers[0].name,
+    theme: levelTiers[0].theme,
   };
 };
 
-const LevelCard: React.FC<{ levelName?: string | number }> = ({ levelName }) => {
-  const levelData = getUserLevelData(levelName);
+const LevelCard: React.FC<{ user: User }> = ({ user }) => {
+  const levelData = getUserLevelData(user.totalInvested, user.user_level);
 
+  const currentLevelInfo = levelTiers.find(t => t.level === levelData.level)!;
+  const nextLevelInfo = levelTiers.find(t => t.level === levelData.level + 1);
+  
+  const progress = useMemo(() => {
+    if (!nextLevelInfo) return 100; // Max level
+    const currentInvestment = user.totalInvested;
+    if (currentInvestment < currentLevelInfo.minInvest) return 0;
+    
+    const progressSinceLastLevel = currentInvestment - currentLevelInfo.minInvest;
+    const rangeToNextLevel = nextLevelInfo.minInvest - currentLevelInfo.minInvest;
+    
+    if (rangeToNextLevel <= 0) return 100;
+    
+    return Math.min(Math.floor((progressSinceLastLevel / rangeToNextLevel) * 100), 100);
+  }, [user.totalInvested, currentLevelInfo, nextLevelInfo]);
+  
   return (
-    <Card className={`relative overflow-hidden flex flex-col justify-center items-center h-full animated-level-card border-2 ${levelData.theme.shadow} border-transparent hover:border-white/30 text-center`}>
-        <div className={`absolute -inset-8 bg-gradient-to-br ${levelData.theme.gradient} opacity-20 blur-3xl animate-pulse-slow -z-10`}></div>
+    <Card className={`animated-level-card relative overflow-hidden flex flex-col justify-between bg-gradient-to-br flare-animated  ${levelData.theme.gradient} ${levelData.theme.shadow}`}>
         <div>
-            <h3 className="text-gray-400">Your Level</h3>
-            <p className={`text-5xl font-bold ${levelData.theme.textColor} mt-1 text-shadow`}>{levelData.name}</p>
+            <h2 className="text-xl font-bold text-white text-shadow flare-animated">{levelData.name}</h2>
+            <p className={`text-sm ${levelData.theme.textColor}`}>Your current rank</p>
         </div>
+   
     </Card>
   );
 };
 
+// --- END: NEW LEVEL LOGIC ---
 
-// --- END: NEW LEVEL CARD LOGIC & COMPONENT ---
 
 const ShareIcon: React.FC<{ path: string }> = ({ path }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -261,17 +283,30 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
     <div className="space-y-8">
       {/* Top Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <h2 className="text-2xl font-bold text-white mb-2">Wallet Balance</h2>
-          <p className="text-5xl font-bold text-brand-primary mb-4">
-            <AnimatedNumber value={user.walletBalance} prefix="$" decimals={2} />
-          </p>
-          <div className="flex space-x-4">
-            <Button onClick={() => onNavigate('deposit')}>Deposit</Button>
-            <Button onClick={() => onNavigate('withdraw')} variant="secondary">Withdraw</Button>
-          </div>
-        </Card>
-        <Card>
+       <Card className="md:col-span-2">
+  <div className="grid grid-cols-1 md:grid-cols-[70%_30%] gap-6 rounded-2xl shadow p-6">
+    {/* Left Column (70%) */}
+    <div className="p-1">
+      <h2 className="text-2xl font-bold text-white mb-2">Wallet Balance</h2>
+      <p className="text-5xl font-bold text-brand-primary mb-4">
+        <AnimatedNumber value={user.walletBalance} prefix="$" decimals={2} />
+      </p>
+      <div className="flex space-x-4">
+        <Button onClick={() => onNavigate('deposit')}>Deposit</Button>
+        <Button onClick={() => onNavigate('withdraw')} variant="secondary">
+          Withdraw
+        </Button>
+      </div>
+    </div>
+
+    {/* Right Column (30%) */}
+    <div className="rounded-2xl shadow ">
+      <LevelCard user={user} />
+    </div>
+  </div>
+</Card>
+
+         <Card>
           <h2 className="text-2xl font-bold text-white mb-2">Referral Link</h2>
           <div className="flex items-center bg-gray-800 rounded-md p-2 border border-gray-600">
             <input type="text" readOnly value={referralLink} className="bg-transparent text-sm text-gray-300 w-full focus:outline-none"/>
@@ -281,6 +316,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
           </div>
           <p className="text-xs text-gray-500 mt-2">Share this link to grow your team.</p>
         </Card>
+
       </div>
 
       {/* Claim Daily Profit */}
@@ -316,10 +352,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
       {/* Earnings Summary Section */}
       <div>
         <h2 className="text-2xl font-semibold text-white mb-4">Earnings Summary</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
           <StatCard title="Today's Profit" value={user.dailyProfit} />
           <StatCard title="Total Profit" value={user.totalProfit} />
-         <LevelCard levelName={user?.user_level} />
+         
         </div>
       </div>
       
