@@ -74,9 +74,46 @@ const StatCard: React.FC<{ title: string; value: string | number; icon?: React.R
 
 // --- START: NEW LEVEL LOGIC ---
 
+const TypewriterText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+    const [typedText, setTypedText] = useState('');
+    const [showCursor, setShowCursor] = useState(true);
+
+    useEffect(() => {
+        setTypedText(''); 
+        if (text) {
+            let i = 0;
+            const typingInterval = setInterval(() => {
+                if (i < text.length) {
+                    setTypedText(prevText => prevText + text.charAt(i));
+                    i++;
+                } else {
+                    clearInterval(typingInterval);
+                }
+            }, 100); 
+
+            return () => clearInterval(typingInterval);
+        }
+    }, [text]);
+    
+    useEffect(() => {
+        const cursorInterval = setInterval(() => {
+            setShowCursor(prev => !prev);
+        }, 500);
+        return () => clearInterval(cursorInterval);
+    }, []);
+
+    return (
+        <span className={className}>
+            {typedText}
+            {showCursor && typedText.length === text.length && <span className="opacity-75">|</span>}
+        </span>
+    );
+};
+
 interface UserLevel {
   level: number;
   name: string;
+  bonus: number;
   theme: {
     gradient: string;
     textColor: string;
@@ -84,12 +121,14 @@ interface UserLevel {
   };
 }
 
-const levelTiers: { level: number; name: string; minInvest: number; theme: UserLevel['theme'] }[] = [
-  { level: 1, name: 'Level 1', minInvest: 0, theme: { gradient: 'from-gray-700 to-gray-800', textColor: 'text-gray-300', shadow: 'shadow-gray-500/20' } },
-  { level: 2, name: 'Level 2', minInvest: 5000, theme: { gradient: 'from-cyan-500 to-blue-500', textColor: 'text-cyan-200', shadow: 'shadow-cyan-500/30' } },
-  { level: 3, name: 'Level 3', minInvest: 10000, theme: { gradient: 'from-purple-500 to-indigo-500', textColor: 'text-purple-200', shadow: 'shadow-purple-500/30' } },
-  { level: 4, name: 'Level 4', minInvest: 30000, theme: { gradient: 'from-brand-primary to-red-600', textColor: 'text-rose-200', shadow: 'shadow-brand-primary/30' } },
+const levelTiers: { level: number; name: string; minInvest: number; bonus: number; theme: UserLevel['theme'] }[] = [
+  { level: 1, name: 'Level 1', minInvest: 0, bonus: 2, theme: { gradient: 'from-gray-700 to-gray-800', textColor: 'text-gray-300', shadow: 'shadow-gray-500/20' } },
+  { level: 2, name: 'Level 2', minInvest: 5000, bonus: 2.5, theme: { gradient: 'from-cyan-500 to-blue-500', textColor: 'text-cyan-200', shadow: 'shadow-cyan-500/30' } },
+  { level: 3, name: 'Level 3', minInvest: 10000, bonus: 3, theme: { gradient: 'from-purple-500 to-indigo-500', textColor: 'text-purple-200', shadow: 'shadow-purple-500/30' } },
+  { level: 4, name: 'Level 4', minInvest: 30000, bonus: 3.5, theme: { gradient: 'from-brand-primary to-red-600', textColor: 'text-rose-200', shadow: 'shadow-brand-primary/30' } },
+  { level: 5, name: 'Level 5', minInvest: 50000, bonus: 4, theme: { gradient: 'from-yellow-400 via-red-500 to-pink-500', textColor: 'text-yellow-200', shadow: 'shadow-yellow-500/40' } },
 ];
+
 
 const getUserLevelData = (totalInvested: number, levelName?: string | number): UserLevel => {
   // First, try to determine level by investment amount for accuracy
@@ -98,6 +137,7 @@ const getUserLevelData = (totalInvested: number, levelName?: string | number): U
     return {
       level: investmentLevel.level,
       name: investmentLevel.name,
+      bonus: investmentLevel.bonus,
       theme: investmentLevel.theme,
     };
   }
@@ -114,14 +154,16 @@ const getUserLevelData = (totalInvested: number, levelName?: string | number): U
         currentTier = levelTiers.find(tier => tier.level === levelNumber);
       }
     }
-    if (currentTier) return { level: currentTier.level, name: currentTier.name, theme: currentTier.theme };
+    if (currentTier) return { level: currentTier.level, name: currentTier.name, bonus: currentTier.bonus, theme: currentTier.theme };
   }
 
   // Default to the first level if nothing matches
+  const defaultTier = levelTiers[0];
   return {
-    level: levelTiers[0].level,
-    name: levelTiers[0].name,
-    theme: levelTiers[0].theme,
+    level: defaultTier.level,
+    name: defaultTier.name,
+    bonus: defaultTier.bonus,
+    theme: defaultTier.theme,
   };
 };
 
@@ -145,12 +187,18 @@ const LevelCard: React.FC<{ user: User }> = ({ user }) => {
   }, [user.totalInvested, currentLevelInfo, nextLevelInfo]);
   
   return (
-    <Card className={`animated-level-card relative overflow-hidden flex flex-col justify-between bg-gradient-to-br flare-animated  ${levelData.theme.gradient} ${levelData.theme.shadow}`}>
-        <div>
-            <h2 className="text-xl font-bold text-white text-shadow flare-animated">{levelData.name}</h2>
-            <p className={`text-sm ${levelData.theme.textColor}`}>Your current rank</p>
+    <Card className={`animated-level-card relative overflow-hidden flex flex-col justify-between bg-gradient-to-br ${levelData.theme.gradient} ${levelData.theme.shadow} h-full`}>
+        <div className="flex-grow">
+            <h2 className="text-xl font-bold text-white text-shadow">{levelData.name}</h2>
+            <TypewriterText text="Your current rank" className={`text-sm ${levelData.theme.textColor}`} />
+            
+            <div className="mt-4">
+                <p className="text-3xl font-bold text-white text-shadow flare-animated">{currentLevelInfo.bonus}%</p>
+                <p className={`text-sm ${levelData.theme.textColor}`}>Daily Bonus</p>
+            </div>
         </div>
-   
+
+        
     </Card>
   );
 };
@@ -283,28 +331,26 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
     <div className="space-y-8">
       {/* Top Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-       <Card className="md:col-span-2">
-  <div className="grid grid-cols-1 md:grid-cols-[70%_30%] gap-6 rounded-2xl shadow p-6">
-    {/* Left Column (70%) */}
-    <div className="p-1">
-      <h2 className="text-2xl font-bold text-white mb-2">Wallet Balance</h2>
-      <p className="text-5xl font-bold text-brand-primary mb-4">
-        <AnimatedNumber value={user.walletBalance} prefix="$" decimals={2} />
-      </p>
-      <div className="flex space-x-4">
-        <Button onClick={() => onNavigate('deposit')}>Deposit</Button>
-        <Button onClick={() => onNavigate('withdraw')} variant="secondary">
-          Withdraw
-        </Button>
-      </div>
-    </div>
+        <Card className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 items-center">
+                {/* Left Column (Wallet) */}
+                <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Wallet Balance</h2>
+                    <p className="text-5xl font-bold text-brand-primary mb-4">
+                        <AnimatedNumber value={user.walletBalance} prefix="$" decimals={2} />
+                    </p>
+                    <div className="flex space-x-4">
+                        <Button onClick={() => onNavigate('deposit')}>Deposit</Button>
+                        <Button onClick={() => onNavigate('withdraw')} variant="secondary">
+                            Withdraw
+                        </Button>
+                    </div>
+                </div>
 
-    {/* Right Column (30%) */}
-    <div className="rounded-2xl shadow ">
-      <LevelCard user={user} />
-    </div>
-  </div>
-</Card>
+                {/* Right Column (Level) */}
+                <LevelCard user={user} />
+            </div>
+        </Card>
 
          <Card>
           <h2 className="text-2xl font-bold text-white mb-2">Referral Link</h2>
@@ -481,6 +527,19 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user, onNavigate, dailyCl
       </div>
 
       <style>{`
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        .flare-animated {
+          background-image: linear-gradient(to right, #E61E4D 20%, #ffffff 50%, #E61E4D 80%);
+          background-size: 200% auto;
+          color: #fff;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 3s linear infinite;
+        }
         @keyframes scale-in-dropdown {
           from {
             opacity: 0;
