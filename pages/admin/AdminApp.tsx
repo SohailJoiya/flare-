@@ -10,6 +10,23 @@ import Icon from '../../components/Icon';
 import NotificationModal from '../../components/NotificationModal';
 import api from '../../services/api';
 
+// Shape of /api/admin/dashboard-stats
+type DashboardStats = {
+  deposits: {
+    approved: { count: number; totalAmount: number };
+    pending: { count: number; totalAmount: number };
+  };
+  withdrawals: {
+    approved: { count: number; totalAmount: number };
+    pending: { count: number; totalAmount: number };
+  };
+  users: {
+    totalUser: number;
+    activeCount: number;
+    inactiveCount: number;
+  };
+};
+
 interface AdminAppProps {
   user: User;
   users: User[];
@@ -23,6 +40,9 @@ interface AdminAppProps {
   onDeleteNotification: (id: string) => void;
   onLogout: () => void;
   onMarkNotificationAsRead: (notificationId: string) => void;
+
+  // NEW: pass-through stats for dashboard cards
+  dashboardStats?: DashboardStats | null;
 }
 
 type AdminPage = 'dashboard' | 'users' | 'deposits' | 'withdrawals' | 'notifications';
@@ -30,18 +50,20 @@ type UserFilter = 'all' | 'active' | 'inactive';
 type RequestFilter = 'all' | RequestStatus;
 
 const AdminApp: React.FC<AdminAppProps> = ({ 
-    user, 
-    users, 
-    requests, 
-    withdrawalRequests,
-    onUpdateRequestStatus, 
-    onUpdateWithdrawalRequestStatus,
-    onLogout,
-    notifications,
-    onAddNotification,
-    onUpdateNotification,
-    onDeleteNotification,
-    onMarkNotificationAsRead,
+  user, 
+  users, 
+  requests, 
+  withdrawalRequests,
+  onUpdateRequestStatus, 
+  onUpdateWithdrawalRequestStatus,
+  onLogout,
+  notifications,
+  onAddNotification,
+  onUpdateNotification,
+  onDeleteNotification,
+  onMarkNotificationAsRead,
+  // NEW: receive stats
+  dashboardStats,
 }) => {
   const [currentPage, setCurrentPage] = React.useState<AdminPage>('dashboard');
   const [initialUserFilter, setInitialUserFilter] = React.useState<UserFilter>('all');
@@ -53,13 +75,13 @@ const AdminApp: React.FC<AdminAppProps> = ({
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-        if (notificationButtonRef.current && !notificationButtonRef.current.contains(event.target as Node)) {
-            setIsNotificationsOpen(false);
-        }
+      if (notificationButtonRef.current && !notificationButtonRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
   
@@ -75,17 +97,16 @@ const AdminApp: React.FC<AdminAppProps> = ({
     }
   };
 
-
   const handleNavigation = (page: AdminPage, filter?: UserFilter | RequestFilter) => {
     switch (page) {
       case 'users':
-        setInitialUserFilter(filter as UserFilter || 'all');
+        setInitialUserFilter((filter as UserFilter) || 'all');
         break;
       case 'deposits':
-        setInitialDepositFilter(filter as RequestFilter || 'all');
+        setInitialDepositFilter((filter as RequestFilter) || 'all');
         break;
       case 'withdrawals':
-        setInitialWithdrawalFilter(filter as RequestFilter || 'all');
+        setInitialWithdrawalFilter((filter as RequestFilter) || 'all');
         break;
     }
     setCurrentPage(page);
@@ -102,25 +123,58 @@ const AdminApp: React.FC<AdminAppProps> = ({
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <AdminDashboard requests={requests} withdrawalRequests={withdrawalRequests} users={users} onNavigate={handleNavigation} />;
+        return (
+          <AdminDashboard
+            requests={requests}
+            withdrawalRequests={withdrawalRequests}
+            users={users}
+            onNavigate={handleNavigation}
+            // NEW: forward stats
+            dashboardStats={dashboardStats}
+          />
+        );
       case 'users':
         return <AllUsersPage initialFilter={initialUserFilter} />;
       case 'deposits':
-        return <DepositRequestsPage users={users} onUpdateRequestStatus={onUpdateRequestStatus} onAddNotification={onAddNotification} initialFilter={initialDepositFilter} />;
+        return (
+          <DepositRequestsPage
+            users={users}
+            onUpdateRequestStatus={onUpdateRequestStatus}
+            onAddNotification={onAddNotification}
+            initialFilter={initialDepositFilter}
+          />
+        );
       case 'withdrawals':
-        return <WithdrawRequestsPage users={users} onUpdateRequestStatus={onUpdateWithdrawalRequestStatus} onAddNotification={onAddNotification} initialFilter={initialWithdrawalFilter} />;
+        return (
+          <WithdrawRequestsPage
+            users={users}
+            onUpdateRequestStatus={onUpdateWithdrawalRequestStatus}
+            onAddNotification={onAddNotification}
+            initialFilter={initialWithdrawalFilter}
+          />
+        );
       case 'notifications':
-        return <NotificationsPage 
+        return (
+          <NotificationsPage 
             notifications={notifications}
             onAdd={onAddNotification}
             onUpdate={onUpdateNotification}
             onDelete={onDeleteNotification}
-        />
+          />
+        );
       default:
-        return <AdminDashboard requests={requests} withdrawalRequests={withdrawalRequests} users={users} onNavigate={handleNavigation} />;
+        return (
+          <AdminDashboard
+            requests={requests}
+            withdrawalRequests={withdrawalRequests}
+            users={users}
+            onNavigate={handleNavigation}
+            // NEW: forward stats in default too
+            dashboardStats={dashboardStats}
+          />
+        );
     }
   };
-
 
   return (
     <div className="min-h-screen bg-brand-dark pb-20 md:pb-0">
@@ -148,44 +202,44 @@ const AdminApp: React.FC<AdminAppProps> = ({
               </div>
             </div>
             <div className="flex items-center space-x-4">
-                <div className="relative" ref={notificationButtonRef}>
-                    <button 
-                        onClick={() => setIsNotificationsOpen(prev => !prev)}
-                        className="p-2 rounded-full text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-primary"
-                        aria-label="View notifications"
-                    >
-                        <Icon path="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        {notifications.length > 0 && (
-                            <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-brand-primary ring-2 ring-brand-surface"></span>
+              <div className="relative" ref={notificationButtonRef}>
+                <button 
+                  onClick={() => setIsNotificationsOpen(prev => !prev)}
+                  className="p-2 rounded-full text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-primary"
+                  aria-label="View notifications"
+                >
+                  <Icon path="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-brand-primary ring-2 ring-brand-surface"></span>
+                  )}
+                </button>
+                {isNotificationsOpen && (
+                  <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-xl shadow-lg bg-brand-surface ring-1 ring-white/10 focus:outline-none z-50 border border-white/10">
+                    <div className="py-1">
+                      <div className="px-4 py-3 border-b border-white/10">
+                        <p className="text-sm font-semibold text-white">Notifications</p>
+                      </div>
+                      <div className="max-h-80 overflow-y-auto">
+                        {notifications.length > 0 ? notifications.map(notif => (
+                          <button 
+                            key={notif.id} 
+                            onClick={() => handleNotificationClick(notif)}
+                            className="w-full text-left block px-4 py-3 text-sm text-gray-400 border-b border-white/5 hover:bg-white/5 transition-colors"
+                          >
+                            <p className="font-bold text-white">{notif.title}</p>
+                            <p className="mt-1 truncate">{notif.content}</p>
+                            <p className="text-xs text-gray-500 mt-2">{notif.date}</p>
+                          </button>
+                        )) : (
+                          <div className="px-4 py-5 text-center text-sm text-gray-500">
+                            No new notifications.
+                          </div>
                         )}
-                    </button>
-                    {isNotificationsOpen && (
-                        <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-xl shadow-lg bg-brand-surface ring-1 ring-white/10 focus:outline-none z-50 border border-white/10">
-                            <div className="py-1">
-                                <div className="px-4 py-3 border-b border-white/10">
-                                    <p className="text-sm font-semibold text-white">Notifications</p>
-                                </div>
-                                <div className="max-h-80 overflow-y-auto">
-                                    {notifications.length > 0 ? notifications.map(notif => (
-                                    <button 
-                                        key={notif.id} 
-                                        onClick={() => handleNotificationClick(notif)}
-                                        className="w-full text-left block px-4 py-3 text-sm text-gray-400 border-b border-white/5 hover:bg-white/5 transition-colors"
-                                    >
-                                        <p className="font-bold text-white">{notif.title}</p>
-                                        <p className="mt-1 truncate">{notif.content}</p>
-                                        <p className="text-xs text-gray-500 mt-2">{notif.date}</p>
-                                    </button>
-                                    )) : (
-                                    <div className="px-4 py-5 text-center text-sm text-gray-500">
-                                        No new notifications.
-                                    </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
               <span className="text-gray-300 hidden sm:block">Welcome, {user.firstName}</span>
               <Button onClick={onLogout} variant="secondary">Logout</Button>
             </div>
@@ -199,28 +253,28 @@ const AdminApp: React.FC<AdminAppProps> = ({
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-brand-surface border-t border-gray-700">
         <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
-            {navItems.map(item => (
-                <button 
-                    key={item.id}
-                    onClick={() => handleNavigation(item.id)} 
-                    type="button" 
-                    className="inline-flex flex-col items-center justify-center font-medium px-2 group focus:outline-none"
-                    aria-current={currentPage === item.id ? 'page' : undefined}
-                >
-                    <div className={`${currentPage === item.id ? 'text-brand-primary' : 'text-gray-400 group-hover:text-white'}`}>
-                        {item.icon}
-                    </div>
-                    <span className={`text-xs text-center ${currentPage === item.id ? 'text-brand-primary' : 'text-gray-400 group-hover:text-white'}`}>
-                        {item.label}
-                    </span>
-                </button>
-            ))}
+          {navItems.map(item => (
+            <button 
+              key={item.id}
+              onClick={() => handleNavigation(item.id)} 
+              type="button" 
+              className="inline-flex flex-col items-center justify-center font-medium px-2 group focus:outline-none"
+              aria-current={currentPage === item.id ? 'page' : undefined}
+            >
+              <div className={`${currentPage === item.id ? 'text-brand-primary' : 'text-gray-400 group-hover:text-white'}`}>
+                {item.icon}
+              </div>
+              <span className={`text-xs text-center ${currentPage === item.id ? 'text-brand-primary' : 'text-gray-400 group-hover:text-white'}`}>
+                {item.label}
+              </span>
+            </button>
+          ))}
         </div>
       </nav>
-       {selectedNotification && (
+      {selectedNotification && (
         <NotificationModal 
-            notification={selectedNotification} 
-            onClose={() => setSelectedNotification(null)} 
+          notification={selectedNotification} 
+          onClose={() => setSelectedNotification(null)} 
         />
       )}
     </div>
