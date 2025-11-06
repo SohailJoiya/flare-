@@ -16,6 +16,7 @@ import Icon from '../../components/Icon';
 import TeamLevelsPage from './TeamLevelsPage';
 import TermsPage from './TermsPage';
 import WhitepaperPage from './WhitepaperPage';
+import ContactUsPage from './ContactUsPage';
 
 interface UserAppProps {
   user: User;
@@ -29,7 +30,7 @@ interface UserAppProps {
   onMarkNotificationAsRead: (notificationId: string) => void;
 }
 
-type UserPage = 'dashboard' | 'deposit' | 'withdraw' | 'investment' | 'team' | 'team-levels' | 'referrals' | 'ranks' | 'about-us' | 'profile' | 'terms' | 'whitepaper';
+type UserPage = 'dashboard' | 'deposit' | 'withdraw' | 'investment' | 'team' | 'team-levels' | 'referrals' | 'ranks' | 'about-us' | 'profile' | 'terms' | 'whitepaper' | 'contact-us';
 
 const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notifications, onAddWithdrawalRequest, dailyClaim, monthlyReward, onRefetchData, onMarkNotificationAsRead }) => {
   const [currentPage, setCurrentPage] = React.useState<UserPage>('dashboard');
@@ -72,6 +73,7 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
     { id: 'referrals', label: 'My Referrals', mobileLabel: 'Referrals', icon: <Icon path="M11 15a4 4 0 100-8 4 4 0 000 8zM11 21a9 9 0 100-18 9 9 0 000 18zM21 21v-2a4 4 0 00-4-4H13" /> },
     { id: 'ranks', label: 'Monthly Rewards', mobileLabel: 'Rewards', icon: <Icon path="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /> },
     { id: 'about-us', label: 'About Us', mobileLabel: 'About', icon: <Icon path="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
+    { id: 'contact-us', label: 'Contact Us', mobileLabel: 'Contact', icon: <Icon path="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /> },
     { id: 'whitepaper', label: 'Whitepaper', mobileLabel: 'Docs', icon: <Icon path="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /> },
     { id: 'terms', label: 'Terms of Service', mobileLabel: 'Terms', icon: <Icon path="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
   ];
@@ -106,6 +108,8 @@ const UserApp: React.FC<UserAppProps> = ({ user, onLogout, onUpdateUser, notific
         return <TermsPage />;
       case 'profile':
         return <ProfilePage user={user} onUpdate={onUpdateUser} />;
+      case 'contact-us':
+        return <ContactUsPage />;
       default:
         return <UserDashboard user={user} onNavigate={setCurrentPage} dailyClaim={dailyClaim} onClaimSuccess={onRefetchData} />;
     }

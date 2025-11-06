@@ -5,7 +5,7 @@ import Input from '../components/Input';
 
 interface LoginPageProps {
   onLogin: (credentials: {email: string, password: string}) => Promise<void>;
-  onNavigate: (page: 'signup' | 'landing' | 'forgot-password') => void;
+  onNavigate: (page: 'signup' | 'landing' | 'forgot-password' | 'terms') => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => {
@@ -81,6 +81,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => {
           <button onClick={() => onNavigate('signup')} className="font-semibold text-brand-primary hover:underline">
             Sign Up
           </button>
+        </p>
+        <p className="text-center text-xs text-gray-500 mt-4">
+            By logging in, you agree to our{' '}
+            <button onClick={() => onNavigate('terms')} className="underline hover:text-brand-primary focus:outline-none">
+                Terms of Service
+            </button>.
         </p>
       </Card>
       <style>{`

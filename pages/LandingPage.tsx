@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
 
 interface LandingPageProps {
-  onNavigate: (page: 'login' | 'signup') => void;
+  onNavigate: (page: 'login' | 'signup' | 'terms') => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
@@ -48,6 +48,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           <Button onClick={() => onNavigate('signup')} variant="secondary">
             Sign Up
           </Button>
+        </div>
+        <div className="text-center mt-8 text-xs text-gray-500">
+            By continuing, you agree to our{' '}
+            <button onClick={() => onNavigate('terms')} className="underline hover:text-brand-primary focus:outline-none">
+                Terms of Service
+            </button>.
         </div>
       </div>
       <style>{`

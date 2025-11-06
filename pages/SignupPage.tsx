@@ -6,7 +6,7 @@ import PhoneInput from '../components/PhoneInput';
 
 interface SignupPageProps {
   onSignup: (data: object) => Promise<void>;
-  onNavigate: (page: 'login' | 'landing') => void;
+  onNavigate: (page: 'login' | 'landing' | 'terms') => void;
   referralCode?: string | null;
 }
 
@@ -100,6 +100,12 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onNavigate, referralC
           <button onClick={() => onNavigate('login')} className="font-semibold text-brand-primary hover:underline">
             Log In
           </button>
+        </p>
+        <p className="text-center text-xs text-gray-500 mt-4">
+            By signing up, you agree to our{' '}
+            <button onClick={() => onNavigate('terms')} className="underline hover:text-brand-primary focus:outline-none">
+                Terms of Service
+            </button>.
         </p>
       </Card>
       <style>{`

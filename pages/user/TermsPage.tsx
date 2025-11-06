@@ -1,5 +1,6 @@
 import React from 'react';
 import Card from '../../components/Card';
+import Button from '../../components/Button';
 
 const termsContentHtml = `
   <h1 class="!text-3xl !font-bold !text-brand-primary !mb-4">Flare Auto Earning - Terms & Conditions</h1>
@@ -101,7 +102,11 @@ const termsContentHtml = `
   </p>
 `;
 
-const TermsPage: React.FC = () => {
+interface TermsPageProps {
+  onBack?: () => void;
+}
+
+const TermsPage: React.FC<TermsPageProps> = ({ onBack }) => {
   return (
     <div className="max-w-4xl mx-auto">
       <Card>
@@ -110,6 +115,13 @@ const TermsPage: React.FC = () => {
           dangerouslySetInnerHTML={{ __html: termsContentHtml }} 
         />
       </Card>
+      {onBack && (
+        <div className="mt-8 text-center">
+          <Button onClick={onBack} variant="secondary">
+            Back to Home
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

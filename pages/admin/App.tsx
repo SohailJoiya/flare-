@@ -27,6 +27,7 @@ import {
   processNotification,
   processDashboardData
 } from '../../processors'
+import TermsPage from '../user/TermsPage'
 
 type DashboardStats = {
   deposits: {
@@ -55,6 +56,7 @@ const App: React.FC = () => {
     | 'forgot-password'
     | 'reset-password'
     | 'email-verification'
+    | 'terms'
   >('landing')
   const [otpPurpose, setOtpPurpose] = useState<'signup' | 'reset-password'>(
     'signup'
@@ -490,6 +492,8 @@ const App: React.FC = () => {
             onNavigate={setCurrentPage}
           />
         )
+      case 'terms':
+        return <TermsPage onBack={() => setCurrentPage('landing')} />
       default:
         return <LandingPage onNavigate={setCurrentPage} />
     }
